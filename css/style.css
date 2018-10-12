@@ -232,7 +232,6 @@ code {
 .widget-title {
   line-height: 1em;
   text-decoration: none;
-  text-transform: uppercase;
 }
 #header,
 #profile .inner,
