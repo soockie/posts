@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="技术分享,JAVA,java,Java,开发,技术,网络,Redis,web,高并发,高可用,redis,mysql,es,spring">
+  <meta name="keyword" content="技术分享,JAVA,java,Java,开发,技术,网络,Redis,web,高并发,高可用,redis,mysql,es,spring">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      Nginx配置 | 万物流逝，思想不朽
+    
+  </title>
+  <link href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdn.bootcss.com/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+  <script src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdn.bootcss.com/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdn.bootcss.com/nprogress/0.2.0/nprogress.min.js"></script>
+  <script src="/js/qrious.js"></script>
+<script src="/js/gitment.js"></script>
+  
+
+</head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>万物流逝，思想不朽</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">主页</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">标签</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">归档</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">关于</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">主页</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">标签</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">归档</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">关于</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>Nginx配置</h2>
+  <p class="post-date">2018-10-25</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><h2 id="全局配置"><a href="#全局配置" class="headerlink" title="全局配置"></a>全局配置</h2><ul>
+<li><p>user nginx nginx ;</p>
+<blockquote>
+<p>Nginx用户及组：用户 组。window下不指定</p>
+</blockquote>
+</li>
+<li><p>worker_processes 8;</p>
+<blockquote>
+<p>工作进程：数目。<br>根据硬件调整，通常等于CPU数量或者2倍于CPU。</p>
+</blockquote>
+</li>
+<li><p>error_log  logs/error.log;  </p>
+</li>
+<li>error_log  logs/error.log  notice;  </li>
+<li><p>error_log  logs/error.log  info;  </p>
+<blockquote>
+<p>错误日志：存放路径。<br>该路径可自定义。</p>
+</blockquote>
+</li>
+<li><p>pid logs/nginx.pid;</p>
+<blockquote>
+<p>pid（进程标识符）：存放路径。</p>
+</blockquote>
+</li>
+<li><p>worker_rlimit_nofile 204800;</p>
+<blockquote>
+<p>指定进程可以打开的最大描述符：数目。  </p>
+<ul>
+<li>这个指令是指当一个nginx进程打开的最多文件描述符数目，理论值应该是最多打开文件数（ulimit -n）与nginx进程数相除，但是nginx分配请求并不是那么均匀，所以最好与ulimit -n 的值保持一致。</li>
+<li>现在在linux 2.6内核下开启文件打开数为65535，worker_rlimit_nofile就相应应该填写65535。</li>
+<li>这是因为nginx调度时分配请求到进程并不是那么的均衡，所以假如填写10240，总并发量达到3-4万时就有进程可能超过10240了，这时会返回502错误。</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h2 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h2><blockquote>
+<p>events<br>{  </p>
+<ul>
+<li>use epoll;<br>使用epoll的I/O 模型。linux建议epoll，FreeBSD建议采用kqueue，window下不指定。 </li>
+</ul>
+<hr>
+<p>补充说明:<br>与apache相类，nginx针对不同的操作系统，有不同的事件模型  </p>
+<h2 id="标准事件模型"><a href="#标准事件模型" class="headerlink" title="标准事件模型"></a>标准事件模型</h2><p>Select、poll属于标准事件模型，如果当前系统不存在更有效的方法，nginx会选择select或poll</p>
+<h2 id="高效事件模型"><a href="#高效事件模型" class="headerlink" title="高效事件模型"></a>高效事件模型</h2><p>Kqueue：使用于FreeBSD 4.1+, OpenBSD 2.9+, NetBSD 2.0 和 MacOS X.使用双处理器的MacOS X系统使用kqueue可能会造成内核崩溃。<br>Epoll：使用于Linux内核2.6版本及以后的系统。<br>/dev/poll：使用于Solaris 7 11/99+，HP/UX 11.22+ (eventport)，IRIX 6.5.15+ 和 Tru64 UNIX 5.1A+。<br>Eventport：使用于Solaris 10。 为了防止出现内核崩溃的问题， 有必要安装安全补丁。  </p>
+<hr>
+<ul>
+<li><p>worker_connections 204800;<br>没个工作进程的最大连接数量。根据硬件调整，和前面工作进程配合起来用，尽量大，但是别把cpu跑到100%就行。每个进程允许的最多连接数，理论上每台nginx服务器的最大连接数为:worker_processes*worker_connections</p>
+</li>
+<li><p>keepalive_timeout 60;<br>keepalive超时时间。</p>
+</li>
+<li><p>client_header_buffer_size 4k;<br>客户端请求头部的缓冲区大小。这个可以根据你的系统分页大小来设置，一般一个请求头的大小不会超过1k，不过由于一般系统分页都要大于1k，所以这里设置为分页大小。</p>
+</li>
+</ul>
+<blockquote>
+<p>分页大小可以用命令getconf PAGESIZE 取得。<br>[root@web001 ~]# getconf PAGESIZE<br>4096<br>但也有client_header_buffer_size超过4k的情况，但是client_header_buffer_size该值必须设置为“系统分页大小”的整倍数。  </p>
+</blockquote>
+<ul>
+<li><p>open_file_cache max=65535 inactive=60s;<br>这个将为打开文件指定缓存，默认是没有启用的，max指定缓存数量，建议和打开文件数一致，inactive是指经过多长时间文件没被请求后删除缓存。</p>
+</li>
+<li><p>open_file_cache_valid 80s;<br>这个是指多长时间检查一次缓存的有效信息。</p>
+</li>
+<li><p>open_file_cache_min_uses 1;<br>open_file_cache指令中的inactive参数时间内文件的最少使用次数，如果超过这个数字，文件描述符一直是在缓存中打开的，如上例，如果有一个文件在inactive时间内一次没被使用，它将被移除。<br>}</p>
+</li>
+</ul>
+</blockquote>
+<h2 id="设定http服务器，利用它的反向代理功能提供负载均衡支持"><a href="#设定http服务器，利用它的反向代理功能提供负载均衡支持" class="headerlink" title="设定http服务器，利用它的反向代理功能提供负载均衡支持"></a>设定http服务器，利用它的反向代理功能提供负载均衡支持</h2><blockquote>
+<p>http<br>{  </p>
+<ul>
+<li><p>include mime.types;<br>设定mime类型,类型由mime.type文件定义</p>
+</li>
+<li><p>default_type application/octet-stream;<br>默认mime类型</p>
+</li>
+<li><p>log_format main ‘\$remote_addr - \$remote_user [\$time_local] “\$request” ‘<br>‘\$status \$body_bytes_sent “\$http_referer”‘<br>‘“\$http_user_agent” “\$http_x_forwarded_for”‘;  </p>
+</li>
+<li><p>log_format log404 ‘\$status [\$time_local] \$remote_addr \$host\$request_uri \$sent_http_location’;<br>以上两个log_format 命令用于设置日志格式。<br>格式为：log_format [log-name] [记录信息变量配置]</p>
+<h3 id="变量说明"><a href="#变量说明" class="headerlink" title="变量说明"></a>变量说明</h3><blockquote>
+<p>\$remote_addr与\$http_x_forwarded_for用以记录客户端的ip地址；<br>\$remote_user：用来记录客户端用户名称；<br>\$time_local： 用来记录访问时间与时区；<br>\$request： 用来记录请求的url与http协议；<br>\$status： 用来记录请求状态；成功是200，<br>\$body_bytes_sent ：记录发送给客户端文件主体内容大小；<br>\$http_referer：用来记录从那个页面链接访问过来的；<br>\$http_user_agent：记录客户浏览器的相关信息；<br>通常web服务器放在反向代理的后面，这样就不能获取到客户的IP地址了，通过\$remote_add拿到的IP地址是反向代理服务器的iP地址。反向代理服务器在转发请求的http头信息中，可以增加x_forwarded_for信息，用以记录原有客户端的IP地址和原来客户端的请求的服务器地址。</p>
+</blockquote>
+</li>
+<li><p>access_log  logs/host.access.log  main;<br>access_log  logs/host.access.404.log  log404;<br>用了log_format指令设置了日志格式之后，需要用access_log指令指定日志文件的存放路径；</p>
+</li>
+<li><p>server_names_hash_bucket_size 128;<br>保存服务器名字的hash表是由指令server_names_hash_max_size 和server_names_hash_bucket_size所控制的。参数server_names_hash_bucket_size总是等于hash表的大小，并且是一路处理器缓存大小的倍数。在减少了在内存中的存取次数后，使在处理器中加速查找hash表键值成为可能。如果 server_names_hash_bucket_size等于一路处理器缓存的大小，那么在查找键的时候，最坏的情况下在内存中查找的次数为2。第一次是确定存储单元的地址，第二次是在存储单元中查找键值。因此，如果Nginx给出需要增大server_names_hash_max_size或 server_names_hash_bucket_size的提示，那么首要的是增大前一个参数的大小.</p>
+</li>
+<li><p>client_header_buffer_size 4k;<br>客户端请求头部的缓冲区大小。这个可以根据你的系统分页大小来设置，一般一个请求的头部大小不会超过1k，不过由于一般系统分页都要大于1k，所以这里设置为分页大小。分页大小可以用命令getconf PAGESIZE取得。</p>
+</li>
+<li><p>large_client_header_buffers 8 128k;<br>客户请求头缓冲大小。nginx默认会用client_header_buffer_size这个buffer来读取header值，如果<br>header过大，它会使用large_client_header_buffers来读取。</p>
+</li>
+<li><p>open_file_cache max=102400 inactive=20s;<br>这个指令指定缓存是否启用。<br>例: open_file_cache max=1000 inactive=20s; </p>
+</li>
+<li><p>open_file_cache_valid 30s;<br>语法:open_file_cache_valid time 默认值:open_file_cache_valid 60 使用字段:http, server, location 这个指令指定了何时需要检查open_file_cache中缓存项目的有效信息. </p>
+</li>
+<li>open_file_cache_min_uses 2;<br>语法:open_file_cache_min_uses number 默认值:open_file_cache_min_uses 1 使用字段:http, server, location 这个指令指定了在open_file_cache指令无效的参数中一定的时间范围内可以使用的最小文件数,如果使用更大的值,文件描述符在cache中总是打开状态.</li>
+<li><p>open_file_cache_errors on;<br>语法:open_file_cache_errors on | off 默认值:open_file_cache_errors off 使用字段:http, server, location 这个指令指定是否在搜索一个文件是记录cache错误.</p>
+</li>
+<li><p>client_max_body_size 300m;<br>设定通过nginx上传文件的大小</p>
+</li>
+<li><p>sendfile on;<br>sendfile指令指定 nginx 是否调用sendfile 函数（zero copy 方式）来输出文件，对于普通应用，必须设为on。如果用来进行下载等应用磁盘IO重负载应用，可设置为off，以平衡磁盘与网络IO处理速度，降低系统uptime。</p>
+</li>
+<li><p>tcp_nopush on;<br>此选项允许或禁止使用socke的TCP_CORK的选项，此选项仅在使用sendfile的时候使用</p>
+</li>
+<li><p>proxy_connect_timeout 90;<br>后端服务器连接的超时时间_发起握手等候响应超时时间</p>
+</li>
+<li><p>proxy_read_timeout 180;<br>连接成功后<em>等候后端服务器响应时间</em>其实已经进入后端的排队之中等候处理（也可以说是后端服务器处理请求的时间）</p>
+</li>
+<li><p>proxy_send_timeout 180;<br>后端服务器数据回传时间_就是在规定时间之内后端服务器必须传完所有的数据</p>
+</li>
+<li><p>proxy_buffer_size 256k;<br>设置从被代理服务器读取的第一部分应答的缓冲区大小，通常情况下这部分应答中包含一个小的应答头，默认情况下这个值的大小为指令proxy_buffers中指定的一个缓冲区的大小，不过可以将其设置为更小</p>
+</li>
+<li><p>proxy_buffers 4 256k;<br>设置用于读取应答（来自被代理服务器）的缓冲区数目和大小，默认情况也为分页大小，根据操作系统的不同可能是4k或者8k</p>
+</li>
+<li><p>proxy_busy_buffers_size 256k;</p>
+</li>
+<li><p>proxy_temp_file_write_size 256k;<br>设置在写入proxy_temp_path时数据的大小，预防一个工作进程在传递文件时阻塞太长</p>
+</li>
+<li><p>proxy_temp_path /data0/proxy_temp_dir;<br>proxy_temp_path和proxy_cache_path指定的路径必须在同一分区</p>
+</li>
+<li><p>proxy_cache_path /data0/proxy_cache_dir levels=1:2 keys_zone=cache_one:200m inactive=1d max_size=30g;<br>设置内存缓存空间大小为200MB，1天没有被访问的内容自动清除，硬盘缓存空间大小为30GB。</p>
+</li>
+<li><p>keepalive_timeout 120;<br>keepalive超时时间。</p>
+</li>
+<li><p>tcp_nodelay on;</p>
+</li>
+<li><p>client_body_buffer_size 512k;<br>如果把它设置为比较大的数值，例如256k，那么，无论使用firefox还是IE浏览器，来提交任意小于256k的图片，都很正常。如果注释该指令，使用默认的client_body_buffer_size设置，也就是操作系统页面大小的两倍，8k或者16k，问题就出现了。<br>无论使用firefox4.0还是IE8.0，提交一个比较大，200k左右的图片，都返回500 Internal Server Error错误</p>
+</li>
+<li><p>proxy_intercept_errors on;<br>表示使nginx阻止HTTP应答代码为400或者更高的应答。</p>
+</li>
+<li><p>upstream bakend {<br>server 127.0.0.1:8027;<br>server 127.0.0.1:8028;<br>server 127.0.0.1:8029;<br>hash \$request_uri;<br>}<br>nginx的upstream目前支持4种方式的分配<br>1、轮询（默认）<br>每个请求按时间顺序逐一分配到不同的后端服务器，如果后端服务器down掉，能自动剔除。<br>2、最少连接<br>upstream bakend {<br>  least_conn;<br>  server 192.168.0.14;<br>  server 192.168.0.15;<br>}<br>3、weight（权重）<br>指定轮询几率，weight和访问比率成正比，用于后端服务器性能不均的情况。<br>例如：<br>upstream bakend {<br>server 192.168.0.14 weight=10;<br>server 192.168.0.15 weight=10;<br>}<br>4、ip_hash（IP的Hash值）<br>每个请求按访问ip的hash结果分配，这样每个访客固定访问一个后端服务器，可以解决session的问题。<br>例如：<br>upstream bakend {<br>ip_hash;<br>server 192.168.0.14:88;<br>server 192.168.0.15:80;<br>}<br>5、fair（第三方）<br>按后端服务器的响应时间来分配请求，响应时间短的优先分配。<br>upstream backend {<br>server server1;<br>server server2;<br>fair;<br>}<br>6、url_hash（第三方）<br>按访问url的hash结果来分配请求，使每个url定向到同一个后端服务器，后端服务器为缓存时比较有效。<br>例：在upstream中加入hash语句，server语句中不能写入weight等其他的参数，hash_method是使用的hash算法<br>upstream backend {<br>server squid1:3128;<br>server squid2:3128;<br>hash \$request_uri;<br>hash_method crc32;<br>}<br>tips:<br>upstream bakend{定义负载均衡设备的Ip及设备状态}{<br>ip_hash;<br>server 127.0.0.1:9090 down;<br>server 127.0.0.1:8080 weight=2;<br>server 127.0.0.1:6060;<br>server 127.0.0.1:7070 backup;<br>}<br>在需要使用负载均衡的server中增加<br>proxy_pass <a href="http://bakend/" target="_blank" rel="noopener">http://bakend/</a>;<br>每个设备的状态设置为:<br>1.down表示单前的server暂时不参与负载<br>2.weight为weight越大，负载的权重就越大。<br>3.max_fails：允许请求失败的次数默认为1.<br>4.fail_timeout:max_fails次失败后，暂停的时间。<br>5.backup： 其它所有的非backup机器down或者忙的时候，请求backup机器。所以这台机器压力会最轻。 </p>
+</li>
+</ul>
+<p>nginx支持同时设置多组的负载均衡，用来给不用的server来使用。</p>
+<ul>
+<li>client_body_in_file_only设置为On<br>可以将client post过来的数据记录到文件中用来做debug  </li>
+<li>client_body_temp_path<br>设置记录文件的目录 可以设置最多3层目录</li>
+</ul>
+<p>location对URL进行匹配.可以进行重定向或者进行新的代理 负载均衡</p>
+</blockquote>
+<h2 id="配置虚拟机"><a href="#配置虚拟机" class="headerlink" title="配置虚拟机"></a>配置虚拟机</h2><blockquote>
+<p>server<br>{</p>
+<ul>
+<li><p>listen 80;<br>配置监听端口 </p>
+</li>
+<li><p>server_name image.***.com;<br>配置访问域名</p>
+</li>
+<li><p>location ~* .(mp3|exe)\$ {<br>对以“mp3或exe”结尾的地址进行负载均衡</p>
+</li>
+<li>proxy_pass <a href="http://img_relay\$request_uri" target="_blank" rel="noopener">http://img_relay\$request_uri</a>;<br>设置被代理服务器的端口或套接字，以及URL</li>
+<li>proxy_set_header Host \$host;<br>proxy_set_header X-Real-IP \$remote_addr;<br>proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;<br>以上三行，目的是将代理服务器收到的用户的信息传到真实服务器上<br>}</li>
+</ul>
+<h3 id="url匹配设置"><a href="#url匹配设置" class="headerlink" title="url匹配设置"></a>url匹配设置</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&gt;location /face &#123;  </span><br><span class="line">&gt;    if (\$http_user_agent ~* "xnp") &#123;  </span><br><span class="line">&gt;       rewrite ^(.*)\$ http://211.151.188.190:8080/face.jpg redirect;  </span><br><span class="line">&gt;   &#125;  </span><br><span class="line">&gt;   proxy_pass http://img_relay\$request_uri;  </span><br><span class="line">&gt;   proxy_set_header Host \$host;  </span><br><span class="line">&gt;   proxy_set_header X-Real-IP \$remote_addr;  </span><br><span class="line">&gt;   proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;  </span><br><span class="line">&gt;   error_page 404 502 = @fetch;  </span><br><span class="line">&gt;&#125;</span><br><span class="line">&gt;location @fetch &#123;</span><br><span class="line">&gt;   access_log /data/logs/face.log log404;</span><br><span class="line">&gt;   rewrite ^(.*)\$ http://211.151.188.190:8080/face.jpg redirect;</span><br><span class="line">&gt;&#125;</span><br><span class="line">&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<blockquote>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&gt;location /image &#123;</span><br><span class="line">&gt;   if (\$http_user_agent ~* "xnp") &#123;</span><br><span class="line">&gt;       rewrite ^(.*)\$ http://211.151.188.190:8080/face.jpg redirect;</span><br><span class="line">&gt;   &#125;</span><br><span class="line">&gt;   proxy_pass http://img_relay\$request_uri;</span><br><span class="line">&gt;   proxy_set_header Host \$host;</span><br><span class="line">&gt;   proxy_set_header X-Real-IP \$remote_addr;</span><br><span class="line">&gt;   proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;</span><br><span class="line">&gt;   error_page 404 502 = @fetch;</span><br><span class="line">&gt;&#125;</span><br><span class="line">&gt;</span><br><span class="line">&gt;location @fetch &#123;</span><br><span class="line">&gt;   access_log /data/logs/image.log log404;</span><br><span class="line">&gt;   rewrite ^(.*)\$ http://211.151.188.190:8080/face.jpg redirect;</span><br><span class="line">&gt;&#125;</span><br><span class="line">&gt;&#125;</span><br><span class="line">&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h2 id="举例"><a href="#举例" class="headerlink" title="举例"></a>举例</h2><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line">server</span><br><span class="line">&#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> *.**<span class="regexp">*.com</span> *.**<span class="regexp">*.cn</span>;</span><br><span class="line">    <span class="attribute">location</span> <span class="regexp">~* \.(mp3|exe)\$</span> &#123;</span><br><span class="line">        <span class="attribute">proxy_pass</span> http://img_relay\<span class="variable">$request_uri</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Host \<span class="variable">$host</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Real-IP \<span class="variable">$remote_addr</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Forwarded-For \<span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">        <span class="attribute">if</span> (\<span class="variable">$http_user_agent</span> <span class="regexp">~* "xnp")</span> &#123;</span><br><span class="line">            <span class="attribute">rewrite</span><span class="regexp"> ^(.*)\$</span> http://i1.***img.com/help/noimg.gif <span class="literal">redirect</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="attribute">proxy_pass</span> http://img_relay\<span class="variable">$request_uri</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Host \<span class="variable">$host</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Real-IP \<span class="variable">$remote_addr</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Forwarded-For \<span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">        <span class="comment">#error_page 404 http://i1.***img.com/help/noimg.gif;</span></span><br><span class="line">        <span class="attribute">error_page</span> <span class="number">404</span> <span class="number">502</span> = <span class="variable">@fetch</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">location</span> <span class="variable">@fetch</span> &#123;</span><br><span class="line">        <span class="attribute">access_log</span> /data/logs/baijiaqi.log log404;</span><br><span class="line">        <span class="attribute">rewrite</span><span class="regexp"> ^(.*)\$</span> http://i1.***img.com/help/noimg.gif <span class="literal">redirect</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server</span><br><span class="line">&#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> *.***img.com;</span><br><span class="line">    <span class="attribute">location</span> <span class="regexp">~* \.(mp3|exe)\$</span> &#123;</span><br><span class="line">        <span class="attribute">proxy_pass</span> http://img_relay\<span class="variable">$request_uri</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Host \<span class="variable">$host</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Real-IP \<span class="variable">$remote_addr</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Forwarded-For \<span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">        <span class="attribute">if</span> (\<span class="variable">$http_user_agent</span> <span class="regexp">~* "xnp")</span> &#123;</span><br><span class="line">        <span class="attribute">rewrite</span><span class="regexp"> ^(.*)\$</span> http://i1.***img.com/help/noimg.gif;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="attribute">proxy_pass</span> http://img_relay\<span class="variable">$request_uri</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Host \<span class="variable">$host</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Real-IP \<span class="variable">$remote_addr</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Forwarded-For \<span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">        <span class="comment">#error_page 404 http://i1.***img.com/help/noimg.gif;</span></span><br><span class="line">        <span class="attribute">error_page</span> <span class="number">404</span> = <span class="variable">@fetch</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">#access_log off;</span></span><br><span class="line">    <span class="attribute">location</span> <span class="variable">@fetch</span> &#123;</span><br><span class="line">        <span class="attribute">access_log</span> /data/logs/baijiaqi.log log404;</span><br><span class="line">        <span class="attribute">rewrite</span><span class="regexp"> ^(.*)\$</span> http://i1.***img.com/help/noimg.gif <span class="literal">redirect</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server</span><br><span class="line">&#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">8080</span>;</span><br><span class="line">    <span class="attribute">server_name</span> <span class="regexp">ngx-ha.*</span>**img.com;</span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">        <span class="attribute">stub_status</span> <span class="literal">on</span>;</span><br><span class="line">        <span class="attribute">access_log</span> <span class="literal">off</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> imgsrc1.**<span class="regexp">*.net</span>;</span><br><span class="line">    <span class="attribute">root</span> html;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> **<span class="regexp">*.com</span> <span class="regexp">w.*</span>*<span class="regexp">*.com</span>;</span><br><span class="line">    <span class="comment"># access_log /usr/local/nginx/logs/access_log main;</span></span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">        <span class="attribute">rewrite</span><span class="regexp"> ^(.*)\$</span> http://www.***.com/ ;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> ******<span class="regexp">*.com</span> <span class="regexp">w.*</span>*****<span class="regexp">*.com</span>;</span><br><span class="line">    <span class="comment"># access_log /usr/local/nginx/logs/access_log main;</span></span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">        <span class="attribute">rewrite</span><span class="regexp"> ^(.*)\$</span> http://www.*******.com/;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> *****<span class="regexp">*.com</span>;</span><br><span class="line">    <span class="comment"># access_log /usr/local/nginx/logs/access_log main;</span></span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">        <span class="attribute">rewrite</span><span class="regexp"> ^(.*)\$</span> http://www.******.com/;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">#设定查看Nginx状态的地址</span></span><br><span class="line">    <span class="attribute">location</span> /NginxStatus &#123;</span><br><span class="line">        <span class="attribute">stub_status</span> <span class="literal">on</span>;</span><br><span class="line">        <span class="attribute">access_log</span> <span class="literal">on</span>;</span><br><span class="line">        <span class="attribute">auth_basic</span> <span class="string">"NginxStatus"</span>;</span><br><span class="line">        <span class="attribute">auth_basic_user_file</span> conf/htpasswd;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">#禁止访问.htxxx文件</span></span><br><span class="line">    <span class="attribute">location</span> <span class="regexp">~ /\.ht</span> &#123;</span><br><span class="line">    <span class="attribute">deny</span> all;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="注释：变量"><a href="#注释：变量" class="headerlink" title="注释：变量"></a>注释：变量</h2><p>Ngx_http_core_module模块支持内置变量，他们的名字和apache的内置变量是一致的。</p>
+<p>首先是说明客户请求title中的行，例如\$http_user_agent,\$http_cookie等等。</p>
+<p>此外还有其它的一些变量</p>
+<p>\$args此变量与请求行中的参数相等</p>
+<p>\$content_length等于请求行的“Content_Length”的值。</p>
+<p>\$content_type等同与请求头部的”Content_Type”的值</p>
+<p>\$document_root等同于当前请求的root指令指定的值</p>
+<p>\$document_uri与\$uri一样</p>
+<p>\$host与请求头部中“Host”行指定的值或是request到达的server的名字（没有Host行）一样</p>
+<p>\$limit_rate允许限制的连接速率</p>
+<p>\$request_method等同于request的method，通常是“GET”或“POST”</p>
+<p>\$remote_addr客户端ip</p>
+<p>\$remote_port客户端port</p>
+<p>\$remote_user等同于用户名，由ngx_http_auth_basic_module认证</p>
+<p>\$request_filename当前请求的文件的路径名，由root或alias和URI request组合而成</p>
+<p>\$request_body_file</p>
+<p>\$request_uri含有参数的完整的初始URI</p>
+<p>\$query_string与\$args一样</p>
+<p>\$sheeme http模式（http,https）尽在要求是评估例如</p>
+<p>Rewrite ^(.+)\$ \$sheme://example.com\$; Redirect;</p>
+<p>\$server_protocol等同于request的协议，使用“HTTP/或“HTTP/</p>
+<p>\$server_addr request到达的server的ip，一般获得此变量的值的目的是进行系统调用。为了避免系统调用，有必要在listen指令中指明ip，并使用bind参数。</p>
+<p>\$server_name请求到达的服务器名</p>
+<p>\$server_port请求到达的服务器的端口号</p>
+<p>\$uri等同于当前request中的URI，可不同于初始值，例如内部重定向时或使用index</p>
+</section>
+    <!-- Tags START -->
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/yyy/">
+        <span class="nav-arrow">← </span>
+        
+          yyy
+        
+      </a>
+    
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#全局配置"><span class="toc-nav-text">全局配置</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#事件"><span class="toc-nav-text">事件</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#标准事件模型"><span class="toc-nav-text">标准事件模型</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#高效事件模型"><span class="toc-nav-text">高效事件模型</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#设定http服务器，利用它的反向代理功能提供负载均衡支持"><span class="toc-nav-text">设定http服务器，利用它的反向代理功能提供负载均衡支持</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#变量说明"><span class="toc-nav-text">变量说明</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#配置虚拟机"><span class="toc-nav-text">配置虚拟机</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#url匹配设置"><span class="toc-nav-text">url匹配设置</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#举例"><span class="toc-nav-text">举例</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#注释：变量"><span class="toc-nav-text">注释：变量</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://soockie.com/Nginx配置/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+     // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+        
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+
+    // qrcode
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+
+    // gitment
+    var gitmentConfig = "soockie";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "Nginx配置",
+        owner: "soockie",
+        repo: "soockie.github.io",
+        oauth: {
+          client_id: "d379ae7aa22b288825a2",
+          client_secret: "2dd82b9ddaedad6d2903f39069a0d164dcd707ce"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  })();
+</script>
+
+<script>
+  var disqus_shortname = '';
+  
+  var disqus_url = 'http://soockie.com/Nginx配置/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2018 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng/hexo-theme-vexo">vexo</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+<script src="/js/script.js"></script>
+  </body>
+</html>
